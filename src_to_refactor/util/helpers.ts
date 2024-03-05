@@ -1,4 +1,4 @@
-import {ErrorFormatParams} from '../types/helpers';
+import {ErrorFormatParams} from '../types/helpers.js';
 
 /**
  * Formats given error according to class instance, scope and message.

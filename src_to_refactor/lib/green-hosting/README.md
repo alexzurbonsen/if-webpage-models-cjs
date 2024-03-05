@@ -10,9 +10,15 @@
 
 ## observations
 
-- `url`: the url of web page that is checked for green hosting.
+- `domain`: the domain of the web page that is checked for green hosting.
 
-Valid formats: to be checked.
+Valid formats must not include protocol, port, or path information.
+
+Examples:
+- `climateaction.tech` Accepted
+- `https://climateaction.tech` Not Accepted
+- `climateaction.tech/events` Not Accepted
+
 
 ## Returns
 
@@ -20,18 +26,18 @@ Valid formats: to be checked.
 
 ## IMPL
 
-The following is an example of how `GreenHosting` can be invoked using a manifest.
+The following is an example of how `GreenHostingModel` can be invoked using an `impl`.
 
 ```yaml
 name: green-hosting-demo
-description: example manifest invoking green-hosting method
+description: example impl invoking green-hosting model
 tags:
 initialize:
   models:
-    "green-hosting":
-      method: GreenHostingModel
+    - name: green-hosting
+      model: GreenHostingModel
       path: '@alexzurbonsen/if-webpage-models-cjs'
-tree:
+graph:
   children:
     child:
       pipeline:
@@ -40,7 +46,7 @@ tree:
       inputs:
         - timestamp: 2024-02-25T00:00 # time when measurement occurred
           duration: 1
-          url: www.thegreenwebfoundation.org
+          url: thegreenwebfoundation.org
 ```
 
 

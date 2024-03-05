@@ -3,9 +3,9 @@ import {z} from 'zod';
 
 import {allDefined, validate} from '../../util/validations.js';
 
+import {ModelPluginInterface} from '../../interfaces';
+import {ModelParams} from '../../types';
 import {buildErrorMessage} from '../../util/helpers.js';
-import {PluginInterface} from "../../interfaces";
-import {PluginParams} from "../../types/common";
 
 type Resource = {
   url: string;
@@ -14,21 +14,26 @@ type Resource = {
   fromCache: boolean;
 };
 
-export const Puppeteer = (): PluginInterface => {
-  const errorBuilder = buildErrorMessage(Puppeteer.name);
-  const metadata = {
-    kind: 'execute',
-  };
+export class PuppeteerModel implements ModelPluginInterface {
+  errorBuilder = buildErrorMessage(this.constructor.name);
+
+  /**
+   * Configures the puppeteer model.
+   */
+  public async configure(): Promise<ModelPluginInterface> {
+    return this;
+  }
 
   /**
    * Executes the puppeteer model for given url.
    */
-  const execute = async (inputs: PluginParams[]): Promise<PluginParams[]> => {
+  public async execute(inputs: ModelParams[]): Promise<ModelParams[]> {
     return await Promise.all(
       inputs.map(async input => {
-        const validInput = Object.assign(input, validateSingleInput(input));
-        const {pageWeight, dataReloadRatio} = await measurePageSize(validInput.url);
-        input['bytes'] = pageWeight;
+        const validInput = Object.assign(input, this.validateInput(input));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const {pageWeight, dataReloadRatio} = await this.measurePageSize(validInput.url);
+        input['page-weight'] = pageWeight;
         input.options['dataReloadRatio'] = dataReloadRatio;
         //input['page-resources'] = pageResources;
         return input;
@@ -39,7 +44,7 @@ export const Puppeteer = (): PluginInterface => {
   /**
    * Validates the input parameters of the puppeteer model.
    */
-  const validateSingleInput = (input: PluginParams) => {
+  private validateInput(input: ModelParams) {
     const schema = z
       .object({
         url: z.string(),
@@ -49,7 +54,7 @@ export const Puppeteer = (): PluginInterface => {
     return validate<z.infer<typeof schema>>(schema, input);
   }
 
-  const measurePageSize = async (url: string) => {
+  private async measurePageSize(url: string) {
     try {
       const browser = await puppeteer.launch();
 
@@ -82,20 +87,14 @@ export const Puppeteer = (): PluginInterface => {
           dataReloadRatio: (pageWeight - cacheWeight) / pageWeight,
         };
       } finally {
-        // TODO setTimeout or a better solution
         await browser.close();
       }
     } catch (error) {
       throw new Error(
-        errorBuilder({
+        this.errorBuilder({
           message: `Error during determination of page weight. ${error}`,
         })
       );
     }
-  }
-
-  return {
-    metadata,
-    execute,
   }
 }
